@@ -1,8 +1,18 @@
+function normalizeVendorName(value) {
+  return String(value || '')
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .replace(/\s+/g, ' ')
+    .trim()
+    .toLowerCase()
+}
+
 export function parseInvoiceText(rawInput, vendors) {
   const normalizedInput = rawInput.trim()
   const folioMatch = rawInput.match(/folio\s+([A-Za-z0-9-_]+)/i)
   const amountMatch = rawInput.match(/\$([0-9,]+(?:\.[0-9]{2})?)\s*(MXN|USD)/i)
-  const vendor = vendors.find((item) => rawInput.toLowerCase().includes(item.vendor_name.toLowerCase()))
+  const normalizedInputLower = normalizeVendorName(rawInput)
+  const vendor = vendors.find((item) => normalizedInputLower.includes(normalizeVendorName(item.vendor_name)))
 
   return {
     invoice_number: folioMatch ? folioMatch[1].toUpperCase() : `UNREADABLE-${Date.now().toString().slice(-6)}`,
@@ -55,7 +65,7 @@ export function parseExtractedInvoice(payload, vendors) {
     || source.vendor
     || source.proveedor
     || parsedText.vendor_name
-  const vendor = vendors.find((item) => item.vendor_name.toLowerCase() === String(vendorName || '').toLowerCase())
+  const vendor = vendors.find((item) => normalizeVendorName(item.vendor_name) === normalizeVendorName(vendorName))
 
   return {
     ...parsedText,

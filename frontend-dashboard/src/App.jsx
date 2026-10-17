@@ -8,7 +8,7 @@ import { companyTemplates, demoDecisions, demoVendors } from './data/demoData'
 import { listCompanies, updateCompanyPolicy } from './services/companies'
 import { createAgentDecision, listAgentDecisions, updateAgentDecision } from './services/decisions'
 import { companyId, getSupabaseConfigurationError, isSupabaseConfigured } from './services/supabase'
-import { listCompanyVendors } from './services/vendors'
+import { createCompanyVendor, deactivateCompanyVendor, listCompanyVendors } from './services/vendors'
 import { extractInvoiceFromFile } from './services/invoiceWebhook'
 import { parseExtractedInvoice, parseInvoiceText } from './utils/invoiceParser'
 import { evaluatePayment } from './utils/paymentRules'
@@ -103,6 +103,26 @@ function App() {
     }
   }
 
+  const addVendor = async (vendor) => {
+    const createdVendor = await createCompanyVendor({ ...vendor, company_id: companyId })
+    setVendors((current) => [...current, createdVendor].sort((left, right) => left.vendor_name.localeCompare(right.vendor_name)))
+    setNotice(`Proveedor ${createdVendor.vendor_name} agregado a la whitelist`)
+  }
+
+  const removeVendor = async (vendor) => {
+    if (!vendor.id || !companyId) {
+      setVendors((current) => current.filter((item) => item !== vendor))
+      return
+    }
+    try {
+      await deactivateCompanyVendor(vendor.id, companyId)
+      setVendors((current) => current.filter((item) => item.id !== vendor.id))
+      setNotice(`Proveedor ${vendor.vendor_name} retirado de la whitelist`)
+    } catch (error) {
+      setNotice(error.message)
+    }
+  }
+
   const processInvoice = async (file = null) => {
     setIsProcessing(true)
     let processingStage = file ? 'webhook de n8n' : 'análisis local'
@@ -141,7 +161,7 @@ function App() {
     </section>
     {notice && <div className="notice" role="status">{notice}<button type="button" onClick={() => setNotice('')}>×</button></div>}
     <DashboardStats policy={policy} decisions={decisions} vendors={vendors} />
-    <section className="workspace-grid"><InvoiceSimulator channel={channel} setChannel={setChannel} rawInput={rawInput} setRawInput={setRawInput} onProcess={processInvoice} isProcessing={isProcessing} /><PolicyPanel policy={policy} setPolicy={setPolicy} vendors={vendors} onNotice={setNotice} onSave={savePolicy} /></section>
+    <section className="workspace-grid"><InvoiceSimulator channel={channel} setChannel={setChannel} rawInput={rawInput} setRawInput={setRawInput} onProcess={processInvoice} isProcessing={isProcessing} /><PolicyPanel policy={policy} setPolicy={setPolicy} vendors={vendors} onNotice={setNotice} onSave={savePolicy} onAddVendor={addVendor} onRemoveVendor={removeVendor} /></section>
     <DecisionTable decisions={decisions} onReview={reviewDecision} />
     <footer className="app-footer"><span>TrustFlow v0.1 · Motor de decisiones determinista</span><span>Última sincronización: hace un momento</span></footer>
   </main>
