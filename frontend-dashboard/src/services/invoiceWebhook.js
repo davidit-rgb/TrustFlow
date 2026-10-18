@@ -3,7 +3,7 @@ const invoiceWebhookUrl = 'https://chapulines-ut.app.n8n.cloud/webhook-test/6450
 export async function extractInvoiceFromFile(file) {
   try {
     const formData = new FormData()
-    formData.append('file', file, file.name)
+    formData.append('file', file, file.name) 
 
     const response = await fetch(invoiceWebhookUrl, {
       method: 'POST',

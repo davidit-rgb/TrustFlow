@@ -1,9 +1,20 @@
+const CURRENCY_RATES_TO_USD = { USD: 1, MXN: 0.05 }
+
+function convertCurrency(amount, fromCurrency, toCurrency) {
+  if (fromCurrency === toCurrency) return amount
+  const amountInUsd = amount * (CURRENCY_RATES_TO_USD[fromCurrency] || 1)
+  return amountInUsd / (CURRENCY_RATES_TO_USD[toCurrency] || 1)
+}
+
 export function evaluatePayment({ invoice, decisions, policy }) {
   const duplicate = invoice.invoice_number
     ? decisions.some((item) => item.invoice_number.toLowerCase() === invoice.invoice_number.toLowerCase())
     : false
+  const baseCurrency = policy.baseCurrency || 'USD'
   const normalizedAmount = invoice.original_amount && invoice.original_currency
-    ? Math.round(invoice.original_amount * (invoice.original_currency === 'MXN' ? 0.05 : 1))
+    ? Math.round(invoice.original_amount * (invoice.original_currency === baseCurrency
+      ? 1
+      : baseCurrency === 'USD' ? 0.05 : 20))
     : null
   let decision = 'FRENADO'
   let ruleTriggered
@@ -21,16 +32,17 @@ export function evaluatePayment({ invoice, decisions, policy }) {
   } else if (!invoice.vendor) {
     ruleTriggered = 'UNLISTED_VENDOR'
     explanation = `Beneficiario '${invoice.vendor_name}' no existe en la whitelist activa.`
-  } else if (invoice.original_amount > invoice.vendor.maxAgreed) {
+  } else if (invoice.original_amount > convertCurrency(invoice.vendor.maxAgreed, invoice.vendor.currency, invoice.original_currency)) {
     ruleTriggered = 'CONTRACT_MISMATCH'
-    explanation = `El contrato permite hasta ${invoice.vendor.maxAgreed.toLocaleString()} ${invoice.vendor.currency}.`
+    const contractLimitInInvoiceCurrency = convertCurrency(invoice.vendor.maxAgreed, invoice.vendor.currency, invoice.original_currency)
+    explanation = `El contrato permite hasta ${contractLimitInInvoiceCurrency.toLocaleString()} ${invoice.original_currency} (límite registrado: ${invoice.vendor.maxAgreed.toLocaleString()} ${invoice.vendor.currency}).`
   } else if (normalizedAmount > policy.remaining) {
     ruleTriggered = 'OVER_BUDGET'
-    explanation = `Requiere $${normalizedAmount.toLocaleString()} USD y quedan $${policy.remaining.toLocaleString()} USD.`
+    explanation = `Requiere $${normalizedAmount.toLocaleString()} ${baseCurrency} y quedan $${policy.remaining.toLocaleString()} ${baseCurrency}.`
   } else if (normalizedAmount > policy.autoPay) {
     decision = 'ESCALADO'
     ruleTriggered = 'AUTO_PAY_LIMIT'
-    explanation = `Supera el límite automático de $${policy.autoPay.toLocaleString()} USD.`
+    explanation = `Pago detenido: supera el límite automático de $${policy.autoPay.toLocaleString()} ${baseCurrency}. Requiere aprobación humana.`
   } else {
     decision = 'PAGADO'
     ruleTriggered = 'WITHIN_POLICY'

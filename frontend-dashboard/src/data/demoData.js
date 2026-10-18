@@ -1,7 +1,7 @@
 export const companyTemplates = {
-  default: { label: 'Scaleup LATAM', budget: 5000, remaining: 3500, autoPay: 2000 },
-  startup: { label: 'Startup conservadora', budget: 2000, remaining: 1500, autoPay: 500 },
-  enterprise: { label: 'Corporativo global', budget: 50000, remaining: 42000, autoPay: 10000 },
+  default: { label: 'Scaleup LATAM', budget: 5000, remaining: 3500, autoPay: 2000, baseCurrency: 'USD' },
+  startup: { label: 'Startup conservadora', budget: 2000, remaining: 1500, autoPay: 500, baseCurrency: 'USD' },
+  enterprise: { label: 'Corporativo global', budget: 50000, remaining: 42000, autoPay: 10000, baseCurrency: 'USD' },
 }
 
 export const demoVendors = [
