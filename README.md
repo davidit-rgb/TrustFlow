@@ -8,12 +8,16 @@ El dashboard está en [`frontend-dashboard`](./frontend-dashboard) y usa React +
 
 ```text
 frontend-dashboard/src/
+├── assets/           # Recursos estáticos
 ├── components/       # Header, métricas, simulador, política y auditoría
 ├── data/             # Casos y datos de demo
-├── services/         # Acceso a Supabase
+├── services/         # Acceso a Supabase y webhook de n8n
+├── styles/           # Hojas CSS separadas de la lógica React
+│   ├── dashboard.css # Estilos de los componentes del dashboard
+│   └── global.css    # Estilos globales
 ├── utils/            # Parser de facturas y reglas de decisión
-├── App.jsx           # Composición de la aplicación
-└── App.css           # Estilos del dashboard
+├── App.jsx           # Estado y composición de la aplicación
+└── main.jsx          # Punto de entrada React
 ```
 
 ## Supabase

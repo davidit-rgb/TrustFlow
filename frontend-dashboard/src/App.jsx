@@ -13,7 +13,7 @@ import { createCompanyVendor, deactivateCompanyVendor, listCompanyVendors } from
 import { extractInvoiceFromFile } from './services/invoiceWebhook'
 import { parseExtractedInvoice, parseInvoiceText } from './utils/invoiceParser'
 import { evaluatePayment } from './utils/paymentRules'
-import './App.css'
+import './styles/dashboard.css'
 
 function policyFromConfig(config) {
   return {
@@ -204,7 +204,7 @@ function App() {
   return <main className="app-shell">
     <Header user={reviewer} />
     <section className="welcome-row">
-      <div><p className="eyebrow">CONTROL CENTER / OCTUBRE 2026</p><h1>Hola, David <span>👋</span></h1><p className="subtitle">{company ? `${company.company_name} · Supervisa cada pago. Automatiza con confianza.` : 'Supervisa cada pago. Automatiza con confianza.'}</p></div>
+      <div><p className="eyebrow">CONTROL CENTER / OCTUBRE 2026</p><h1>Hola, David</h1><p className="subtitle">{company ? `${company.company_name} · Supervisa cada pago. Automatiza con confianza.` : 'Supervisa cada pago. Automatiza con confianza.'}</p></div>
       <div className="company-picker"><label htmlFor="company-template">Empresa activa</label><select id="company-template" value={template} onChange={(event) => applyTemplate(event.target.value)}>{Object.entries(companyTemplates).map(([key, item]) => <option key={key} value={key}>{item.label}</option>)}</select></div>
     </section>
     {notice && <div className="notice" role="status">{notice}<button type="button" onClick={() => setNotice('')}>×</button></div>}
