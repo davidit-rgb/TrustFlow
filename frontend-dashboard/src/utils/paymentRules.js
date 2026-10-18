@@ -36,6 +36,24 @@ function dateValue(date) {
   return date ? date.toISOString().slice(0, 10) : null
 }
 
+function validateInvoiceTotals(invoice) {
+  const hasFiscalFields = [invoice.subtotal, invoice.iva, invoice.total].some((value) => value !== null && value !== undefined)
+  if (!hasFiscalFields) return null
+  const subtotal = Number(invoice.subtotal)
+  const iva = Number(invoice.iva)
+  const total = Number(invoice.total)
+  if (![subtotal, iva, total].every(Number.isFinite) || subtotal < 0 || iva < 0 || total <= 0) {
+    return 'Alerta de integridad: subtotal, IVA y total deben ser montos numéricos válidos y positivos.'
+  }
+  if (total < subtotal || total < iva) {
+    return `Alerta de integridad: el total ($${total.toLocaleString()}) no puede ser menor que el subtotal ($${subtotal.toLocaleString()}) o el IVA ($${iva.toLocaleString()}).`
+  }
+  if (Math.abs((subtotal + iva) - total) > 0.01) {
+    return `Alerta de integridad: subtotal ($${subtotal.toLocaleString()}) + IVA ($${iva.toLocaleString()}) no coincide con el total ($${total.toLocaleString()}).`
+  }
+  return null
+}
+
 export function validateInvoiceDates(issueDate, dueDate, now = new Date()) {
   const issue = parseDate(issueDate)
   const due = parseDate(dueDate)
@@ -126,10 +144,14 @@ export function evaluatePayment({ invoice, decisions, policy }) {
   let explanation
 
   const dateValidation = validateInvoiceDates(invoice.issue_date, invoice.due_date, now)
+  const totalsValidation = validateInvoiceTotals(invoice)
   if (dateValidation) {
     decision = dateValidation.decision
     ruleTriggered = dateValidation.ruleTriggered
     explanation = dateValidation.explanation
+  } else if (totalsValidation) {
+    ruleTriggered = 'INVOICE_TOTALS_MISMATCH'
+    explanation = totalsValidation
   } else if (byFolio) {
     ruleTriggered = 'DUPLICATE_INVOICE'
     explanation = `El folio ${invoiceNumber} ya fue registrado previamente.`

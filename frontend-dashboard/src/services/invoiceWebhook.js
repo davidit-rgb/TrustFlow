@@ -28,6 +28,12 @@ function nullableDate(value) {
   return /^(no detectad[ao]|unknown|n\/a|null)$/i.test(normalized) ? null : normalized
 }
 
+function nullableAmount(value) {
+  if (value === null || value === undefined || value === '') return null
+  const amount = Number(String(value).replace(/[^0-9.-]+/g, ''))
+  return Number.isFinite(amount) ? amount : null
+}
+
 export function normalizeWebhookPayload(rawPayload) {
   let payload = unwrapWebhookPayload(rawPayload)
   if (payload?.content?.parts?.[0]?.text) payload = payload.content.parts[0].text
@@ -52,6 +58,11 @@ export function normalizeWebhookPayload(rawPayload) {
     vendor_name: data.vendor_name ?? data.beneficiario ?? data.proveedor ?? null,
     original_amount: amount,
     original_currency: currency,
+    subtotal: nullableAmount(data.subtotal),
+    iva: nullableAmount(data.iva ?? data.tax),
+    total: nullableAmount(data.total),
+    decision_final: data.decision_final ?? null,
+    motivo: data.motivo ?? null,
     issue_date: nullableDate(data.issue_date ?? data.fecha_emision),
     due_date: nullableDate(data.due_date ?? data.fecha_vencimiento),
     concept: data.concept ?? data.concepto ?? null,
