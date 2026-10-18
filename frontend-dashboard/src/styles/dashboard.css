@@ -22,7 +22,6 @@
   --amber: #f5b942;
   --red: #f26d85;
   
-  /* NUEVOS TONOS DORADOS */
   --gold: #D4AF37;
   --gold-light: #FCE69A;
   --gold-dark: #856404;
@@ -225,11 +224,13 @@ button {
 .panel {
   background: var(--card);
   border: 1px solid var(--line);
+  width: hv=50%;
   border-radius: 10px;
 }
 
 .stat-card {
   padding: 19px 20px;
+  width: hv=50%;
 }
 
 .stat-heading {
@@ -317,11 +318,11 @@ button {
 
 .workspace-grid {
   display: grid;
-  grid-template-columns: 1.08fr 1fr;
+  grid-template-columns: 1fr 1fr; /* Divide el espacio en dos mitades exactas */
   gap: 14px;
   margin-bottom: 24px;
+  align-items: stretch; /* Obliga a que los elementos internos igualen su altura */
 }
-
 .panel {
   padding: 21px;
 }
@@ -358,7 +359,6 @@ button {
   font-size: 12px;
 }
 
-/* PESTAÑAS ACTIVAS DORADAS */
 .tabs button.active {
   color: var(--gold);
   border-bottom: 2px solid var(--gold);
@@ -383,7 +383,6 @@ button {
   outline: none;
 }
 
-/* ENFOQUE DORADO AL ESCRIBIR */
 .simulator textarea:focus {
   border-color: var(--gold);
 }
@@ -835,6 +834,7 @@ td strong {
   }
   .workspace-grid {
     grid-template-columns: 1fr;
+    width: hv=50%;
   }
   .welcome-row {
     align-items: flex-start;
@@ -870,11 +870,7 @@ td strong {
     flex-direction: column;
   }
 }
-/* =========================================
-   ANIMACIONES DE ENTRADA (CARGA DE APP)
-   ========================================= */
 
-/* 1. Definimos la animación de "Aparecer y deslizar hacia arriba" */
 @keyframes fadeSlideUp {
   0% {
     opacity: 0;
@@ -886,7 +882,6 @@ td strong {
   }
 }
 
-/* 2. Aplicamos la animación a los bloques principales con "retrasos" escalonados */
 .topbar {
   animation: fadeSlideUp 0.7s ease-out both;
 }
@@ -907,7 +902,6 @@ td strong {
   animation: fadeSlideUp 0.7s ease-out 0.6s both;
 }
 
-/* Opcional: Un pequeño pulso al botón primario para invitar a la acción */
 @keyframes pulseGold {
   0% { box-shadow: 0 0 0 0 rgba(212, 175, 55, 0.4); }
   70% { box-shadow: 0 0 0 10px rgba(212, 175, 55, 0); }
@@ -917,59 +911,29 @@ td strong {
 .primary-action {
   animation: pulseGold 2s infinite 1.5s;
 }
-/* =========================================
-   ANIMACIÓN DEL TÍTULO (REVELADO HACIA ABAJO)
-   ========================================= */
 
 @keyframes textRevealDown {
   0% {
     opacity: 0;
-    transform: translateY(-30px); /* Empieza un poco más arriba */
-    clip-path: polygon(0 0, 100% 0, 100% 0, 0 0); /* Oculta la parte inferior */
+    transform: translateY(-30px); 
+    clip-path: polygon(0 0, 100% 0, 100% 0, 0 0);
   }
   100% {
     opacity: 1;
-    transform: translateY(0); /* Vuelve a su posición original */
-    clip-path: polygon(0 0, 100% 0, 100% 150%, 0 150%); /* Revela todo hacia abajo */
+    transform: translateY(0); 
+    clip-path: polygon(0 0, 100% 0, 100% 150%, 0 150%); 
   }
 }
 
-/* Aplicamos el efecto específicamente al H1 */
 .welcome-row h1 {
-  /* Mantenemos tus estilos actuales */
   font-family: 'Space Grotesk';
   margin: 0;
   font-size: 32px;
   letter-spacing: -1px;
   
-  /* Nuevas propiedades para la animación */
   animation: textRevealDown 1.2s cubic-bezier(0.25, 1, 0.5, 1) 0.1s both;
 }
 
-/* Opcional: Que el subtítulo ("DevStudio MX...") aparezca suavemente después */
 .subtitle {
   animation: fadeSlideUp 0.8s ease-out 0.5s both;
-}
-/* =========================================
-   EFECTO DE SALTO/ELEVACIÓN EN TARJETAS
-   ========================================= */
-
-/* 1. Le decimos a las tarjetas cómo deben animarse (suavidad y rebote) */
-.stat-card,
-.panel {
-  /* ... tus estilos de fondo y bordes actuales se mantienen ... */
-  
-  /* Agregamos la transición para el hover */
-  /* El cubic-bezier le da un ligerísimo efecto de rebote elástico al final del salto */
-  transition: transform 0.4s cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 0.4s ease;
-}
-
-/* 2. Definimos qué pasa cuando el cursor entra en la tarjeta */
-.stat-card:hover,
-.panel:hover {
-  transform: translateY(-10px); /* Hace que la tarjeta salte 10px hacia arriba */
-  
-  /* Sombra oscura profunda para dar la ilusión de que se despegó del fondo, 
-     con un bisel/borde dorado muy sutil (opcional) */
-  box-shadow: 0 14px 28px rgba(0, 0, 0, 0.6), 0 0 0 1px rgba(212, 175, 55, 0.2); 
 }
