@@ -32,6 +32,9 @@ export async function createAgentDecision(decision) {
         decision: decision.decision,
         rule_triggered: decision.rule_triggered,
         explanation: decision.explanation,
+        reviewer_status: decision.reviewer_status || null,
+        reviewed_by: decision.reviewed_by || null,
+        reviewed_at: decision.reviewed_at || null,
         applied_policy_snapshot: decision.applied_policy_snapshot || {},
       })
       .select()
