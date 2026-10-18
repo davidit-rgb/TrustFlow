@@ -870,3 +870,106 @@ td strong {
     flex-direction: column;
   }
 }
+/* =========================================
+   ANIMACIONES DE ENTRADA (CARGA DE APP)
+   ========================================= */
+
+/* 1. Definimos la animación de "Aparecer y deslizar hacia arriba" */
+@keyframes fadeSlideUp {
+  0% {
+    opacity: 0;
+    transform: translateY(15px);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* 2. Aplicamos la animación a los bloques principales con "retrasos" escalonados */
+.topbar {
+  animation: fadeSlideUp 0.7s ease-out both;
+}
+
+.welcome-row {
+  animation: fadeSlideUp 0.7s ease-out 0.15s both;
+}
+
+.stats-grid {
+  animation: fadeSlideUp 0.7s ease-out 0.3s both;
+}
+
+.workspace-grid {
+  animation: fadeSlideUp 0.7s ease-out 0.45s both;
+}
+
+.app-footer {
+  animation: fadeSlideUp 0.7s ease-out 0.6s both;
+}
+
+/* Opcional: Un pequeño pulso al botón primario para invitar a la acción */
+@keyframes pulseGold {
+  0% { box-shadow: 0 0 0 0 rgba(212, 175, 55, 0.4); }
+  70% { box-shadow: 0 0 0 10px rgba(212, 175, 55, 0); }
+  100% { box-shadow: 0 0 0 0 rgba(212, 175, 55, 0); }
+}
+
+.primary-action {
+  animation: pulseGold 2s infinite 1.5s;
+}
+/* =========================================
+   ANIMACIÓN DEL TÍTULO (REVELADO HACIA ABAJO)
+   ========================================= */
+
+@keyframes textRevealDown {
+  0% {
+    opacity: 0;
+    transform: translateY(-30px); /* Empieza un poco más arriba */
+    clip-path: polygon(0 0, 100% 0, 100% 0, 0 0); /* Oculta la parte inferior */
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0); /* Vuelve a su posición original */
+    clip-path: polygon(0 0, 100% 0, 100% 150%, 0 150%); /* Revela todo hacia abajo */
+  }
+}
+
+/* Aplicamos el efecto específicamente al H1 */
+.welcome-row h1 {
+  /* Mantenemos tus estilos actuales */
+  font-family: 'Space Grotesk';
+  margin: 0;
+  font-size: 32px;
+  letter-spacing: -1px;
+  
+  /* Nuevas propiedades para la animación */
+  animation: textRevealDown 1.2s cubic-bezier(0.25, 1, 0.5, 1) 0.1s both;
+}
+
+/* Opcional: Que el subtítulo ("DevStudio MX...") aparezca suavemente después */
+.subtitle {
+  animation: fadeSlideUp 0.8s ease-out 0.5s both;
+}
+/* =========================================
+   EFECTO DE SALTO/ELEVACIÓN EN TARJETAS
+   ========================================= */
+
+/* 1. Le decimos a las tarjetas cómo deben animarse (suavidad y rebote) */
+.stat-card,
+.panel {
+  /* ... tus estilos de fondo y bordes actuales se mantienen ... */
+  
+  /* Agregamos la transición para el hover */
+  /* El cubic-bezier le da un ligerísimo efecto de rebote elástico al final del salto */
+  transition: transform 0.4s cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 0.4s ease;
+}
+
+/* 2. Definimos qué pasa cuando el cursor entra en la tarjeta */
+.stat-card:hover,
+.panel:hover {
+  transform: translateY(-10px); /* Hace que la tarjeta salte 10px hacia arriba */
+  
+  /* Sombra oscura profunda para dar la ilusión de que se despegó del fondo, 
+     con un bisel/borde dorado muy sutil (opcional) */
+  box-shadow: 0 14px 28px rgba(0, 0, 0, 0.6), 0 0 0 1px rgba(212, 175, 55, 0.2); 
+}

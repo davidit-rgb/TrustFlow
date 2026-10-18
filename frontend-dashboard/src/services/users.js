@@ -2,8 +2,8 @@ import { supabase } from './supabase'
 
 export const currentUser = {
   id: '00000000-0000-0000-0000-000000000001',
-  full_name: 'David Admin',
-  email: 'david.admin@trustflow.local',
+  full_name: 'TrustFlow Admin',
+  email: 'trustflow.admin@trustflow.local',
   role: 'admin',
 }
 
