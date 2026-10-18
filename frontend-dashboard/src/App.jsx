@@ -10,10 +10,11 @@ import { createAgentDecision, listAgentDecisions, updateAgentDecision } from './
 import { companyId, getSupabaseConfigurationError, isSupabaseConfigured } from './services/supabase'
 import { currentUser, getCurrentUser } from './services/users'
 import { createCompanyVendor, deactivateCompanyVendor, listCompanyVendors } from './services/vendors'
-import { extractInvoiceFromFile } from './services/invoiceWebhook'
-import { parseExtractedInvoice, parseInvoiceText } from './utils/invoiceParser'
+import { extractInvoiceFromFile, extractInvoiceFromText } from './services/invoiceWebhook'
+import { parseExtractedInvoice } from './utils/invoiceParser'
 import { evaluatePayment } from './utils/paymentRules'
-import './App.css'
+import { getDecisionMessage, getProcessingErrorMessage } from './utils/userMessages'
+import './styles/dashboard.css'
 
 function policyFromConfig(config) {
   return {
@@ -37,6 +38,7 @@ function App() {
     return configurationError ? `Modo demo: ${configurationError}` : ''
   })
   const [isProcessing, setIsProcessing] = useState(false)
+  const [modalNotice, setModalNotice] = useState(null)
   const [isEditingPolicy, setIsEditingPolicy] = useState(false)
   const [savedPolicy, setSavedPolicy] = useState(companyTemplates.default)
   const [reviewer, setReviewer] = useState(currentUser)
@@ -165,8 +167,8 @@ function App() {
     let processingStage = file ? 'webhook de n8n' : 'análisis local'
     try {
       const invoice = file
-        ? parseExtractedInvoice(await extractInvoiceFromFile(file), vendors)
-        : parseInvoiceText(rawInput, vendors)
+        ? parseExtractedInvoice(await extractInvoiceFromFile(file, file.type.startsWith('image/') ? 'Imagen' : 'PDF'), vendors, file.type.startsWith('image/') ? 'Imagen' : 'PDF')
+        : parseExtractedInvoice(await extractInvoiceFromText(rawInput, channel), vendors, channel)
       const newDecision = evaluatePayment({ invoice, decisions, policy })
       processingStage = 'guardado en Supabase'
       const savedDecision = await createAgentDecision({
@@ -180,21 +182,15 @@ function App() {
         setPolicy((current) => ({ ...current, remaining: current.remaining - newDecision.normalized_amount }))
         setSavedPolicy((current) => ({ ...current, remaining: current.remaining - newDecision.normalized_amount }))
       }
-      setNotice(newDecision.decision === 'ESCALADO'
-        ? `Pago detenido: ${newDecision.explanation}`
-        : newDecision.decision === 'FRENADO'
-          ? `Pago rechazado por el agente: ${newDecision.explanation} Verifica y confirma la factura antes de intentar otro pago.`
-          : file
-            ? 'Factura extraída por n8n, aprobada y registrada'
-            : isSupabaseConfigured ? 'Factura aprobada automáticamente y guardada en Supabase' : 'Factura aprobada en modo demo')
+      setModalNotice(getDecisionMessage(newDecision, { file: Boolean(file), isSupabaseConfigured, baseCurrency: policy.baseCurrency }))
     } catch (error) {
       console.error(`Error durante ${processingStage}`, error)
       const localDecisionCreated = processingStage === 'guardado en Supabase'
       if (localDecisionCreated) {
-        setNotice(`La decisión no pudo guardarse; el pago no se ejecutó. ${error instanceof Error ? error.message : String(error)}`)
+        setModalNotice(getProcessingErrorMessage(error, processingStage))
       }
       if (!localDecisionCreated) {
-        setNotice(`Falló el ${processingStage}. ${error instanceof Error ? error.message : String(error)}`)
+        setModalNotice(getProcessingErrorMessage(error, processingStage))
       }
     } finally {
       setIsProcessing(false)
@@ -204,10 +200,11 @@ function App() {
   return <main className="app-shell">
     <Header user={reviewer} />
     <section className="welcome-row">
-      <div><p className="eyebrow">CONTROL CENTER / OCTUBRE 2026</p><h1>Hola, David <span>👋</span></h1><p className="subtitle">{company ? `${company.company_name} · Supervisa cada pago. Automatiza con confianza.` : 'Supervisa cada pago. Automatiza con confianza.'}</p></div>
+      <div><p className="eyebrow">CONTROL CENTER / OCTUBRE 2026</p><h1>Bienvenido a TrustFlow </h1><p className="subtitle">{company ? `${company.company_name} · Supervisa cada pago. Automatiza con confianza.` : 'Supervisa cada pago. Automatiza con confianza.'}</p></div>
       <div className="company-picker"><label htmlFor="company-template">Empresa activa</label><select id="company-template" value={template} onChange={(event) => applyTemplate(event.target.value)}>{Object.entries(companyTemplates).map(([key, item]) => <option key={key} value={key}>{item.label}</option>)}</select></div>
     </section>
     {notice && <div className="notice" role="status">{notice}<button type="button" onClick={() => setNotice('')}>×</button></div>}
+    {modalNotice && <div className="modal-backdrop" role="presentation"><section className={`result-modal ${modalNotice.tone}`} role="dialog" aria-modal="true" aria-labelledby="result-modal-title"><button className="modal-close" type="button" aria-label="Cerrar resultado" onClick={() => setModalNotice(null)}>×</button><div className="modal-icon" aria-hidden="true">{modalNotice.tone === 'success' ? '✓' : modalNotice.tone === 'warning' ? '!' : '×'}</div><p className="eyebrow" id="result-modal-title">RESPUESTA DE TRUSTFLOW</p><h2 className="modal-title">{modalNotice.title}</h2><p className="modal-message">{modalNotice.message}</p><button className="modal-confirm" type="button" onClick={() => setModalNotice(null)}>Entendido</button></section></div>}
     <DashboardStats policy={policy} decisions={decisions} vendors={vendors} />
     <section className="workspace-grid"><InvoiceSimulator channel={channel} setChannel={setChannel} rawInput={rawInput} setRawInput={setRawInput} onProcess={processInvoice} isProcessing={isProcessing} /><PolicyPanel policy={policy} setPolicy={setPolicy} vendors={vendors} onNotice={setNotice} onSave={savePolicy} onEdit={() => setIsEditingPolicy(true)} onCancel={() => { setPolicy(savedPolicy); setIsEditingPolicy(false) }} isEditing={isEditingPolicy} onAddVendor={addVendor} onRemoveVendor={removeVendor} /></section>
     <DecisionTable decisions={decisions} baseCurrency={policy.baseCurrency} onReview={reviewDecision} />

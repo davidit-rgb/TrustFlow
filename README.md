@@ -8,12 +8,16 @@ El dashboard está en [`frontend-dashboard`](./frontend-dashboard) y usa React +
 
 ```text
 frontend-dashboard/src/
+├── assets/           # Recursos estáticos
 ├── components/       # Header, métricas, simulador, política y auditoría
 ├── data/             # Casos y datos de demo
-├── services/         # Acceso a Supabase
+├── services/         # Acceso a Supabase y webhook de n8n
+├── styles/           # Hojas CSS separadas de la lógica React
+│   ├── dashboard.css # Estilos de los componentes del dashboard
+│   └── global.css    # Estilos globales
 ├── utils/            # Parser de facturas y reglas de decisión
-├── App.jsx           # Composición de la aplicación
-└── App.css           # Estilos del dashboard
+├── App.jsx           # Estado y composición de la aplicación
+└── main.jsx          # Punto de entrada React
 ```
 
 ## Supabase
@@ -64,6 +68,44 @@ alter table public.companies
 ```
 
 El mismo script agrega la política RLS `demo_update_companies`, limitada al UUID configurado en `frontend-dashboard/.env`. Sin esa política Supabase puede devolver cero filas al actualizar, aunque la política de lectura funcione correctamente.
+
+Para habilitar la ingesta completa y la detección de duplicados multi-canal ejecuta también [`database/002_invoice_ingestion.sql`](./database/002_invoice_ingestion.sql). Esta migración agrega fechas, concepto, indicador de folio de origen y huellas persistidas a `agent_decisions`.
+
+Para los campos fiscales del extractor ejecuta [`database/004_webhook_invoice_totals.sql`](./database/004_webhook_invoice_totals.sql). Agrega `subtotal`, `iva`, `total`, `decision_final` y `motivo`. `decision_final` y `motivo` se conservan como evidencia del webhook; TrustFlow no los usa para aprobar, ya que siempre recalcula la decisión localmente.
+
+Si Supabase muestra `Could not find la columna 'tiene_folio_origen'`, ejecuta [`database/003_fix_invoice_ingestion_columns.sql`](./database/003_fix_invoice_ingestion_columns.sql) en el SQL Editor y recarga el schema cache. La migración sólo agrega la columna faltante y sincroniza su valor con `has_source_folio`; las demás columnas ya deben existir por la migración de ingesta. El frontend convierte valores como `No detectada` a `NULL` y no guarda `decision_final` ni `motivo` del webhook porque la decisión debe calcularse localmente con las reglas vigentes.
+
+El nodo Webhook de n8n siempre agrega metadatos de transporte (`headers`, `params`, `query`, `webhookUrl` y `executionMode`). TrustFlow los descarta: sólo procesa `body` y, dentro de éste, los campos de factura. Para el nodo de extracción usa `$json.body.text` en Chat/Correo o los datos binarios del archivo; el nodo `Respond to Webhook` debe devolver únicamente el objeto de factura, no el sobre completo del Webhook. Si devuelve `{"myField":"value"}`, el dashboard lo rechaza porque corresponde a la respuesta estática predeterminada de n8n.
+
+El navegador no permite eliminar metadatos HTTP como `origin`, `referer`, `sec-*` o `x-forwarded-*`; tampoco los controla el frontend. Esos campos son agregados por el navegador, Cloudflare y n8n antes de ejecutar el workflow. El cuerpo enviado por TrustFlow para texto es deliberadamente mínimo:
+
+```json
+{
+  "text": "mensaje de la factura",
+  "source_channel": "Chat"
+}
+```
+
+Para evitar que esos metadatos lleguen al extractor, agrega inmediatamente después del nodo **Webhook** un nodo **Code** en n8n con este contenido:
+
+```javascript
+const body = $json.body ?? {};
+const text = typeof body === 'string' ? body : body.text;
+const sourceChannel = typeof body === 'object' ? body.source_channel : 'Chat';
+
+if (!String(text ?? '').trim()) {
+  throw new Error('El webhook no recibió body.text.');
+}
+
+return [{
+  json: {
+    text: String(text).trim(),
+    source_channel: sourceChannel === 'Correo' ? 'Correo' : 'Chat',
+  },
+}];
+```
+
+Conecta la salida de ese nodo al extractor/IA y usa `{{$json.text}}`, no `{{$json}}`. Para archivos, conserva sólo el binario de `file` y `source_channel`. Finalmente, configura **Respond to Webhook** para devolver exclusivamente el JSON de factura extraído (`invoice_number`, `vendor_name`, `original_amount`, `original_currency`, `issue_date`, `due_date` y `concept`), nunca el objeto completo del nodo Webhook.
 
 ## Cobertura del reto Blinka
 
