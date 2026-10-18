@@ -53,6 +53,22 @@ El frontend también acepta `invoiceNumber`, `vendorName`, `amount`, `currency`,
 
 TrustFlow calcula y guarda `decision`, `rule_triggered`, `normalized_amount`, `explanation`, `source_channel` y `applied_policy_snapshot`; n8n no debe calcular esos campos. La tabla `agent_decisions` debe conservar al menos las columnas `company_id`, `invoice_number`, `vendor_name`, `source_channel`, `original_amount`, `original_currency`, `normalized_amount`, `decision`, `rule_triggered`, `explanation` y `applied_policy_snapshot`.
 
+### Usuario revisor y aprobación humana
+
+Ejecuta [`database/001_human_review.sql`](./database/001_human_review.sql) en Supabase para crear el usuario operativo de ejemplo y agregar a `agent_decisions` los campos `reviewer_status`, `reviewed_by` y `reviewed_at`. El dashboard identifica inicialmente al usuario `David Admin` mediante el UUID fijo `00000000-0000-0000-0000-000000000001`; en modo Supabase valida que ese usuario exista y esté activo en `trustflow_users`.
+
+Las facturas que superan `max_auto_pay_usd` quedan como `ESCALADO` y `reviewer_status = 'PENDING'`. Un revisor puede aprobarlas o denegarlas desde la bandeja de decisiones. Aprobar cambia la decisión a `PAGADO`; denegar la cambia a `FRENADO`, registra el usuario y la fecha de revisión, y muestra una alerta para verificar cualquier nuevo intento de pago.
+
+La edición de reglas también persiste `companies.base_currency` y la moneda dentro de `policy_config`. El motor normaliza los montos a la moneda base seleccionada (`USD` o `MXN`) antes de aplicar presupuesto y límite automático. La columna `companies.base_currency` ya es necesaria para que `listCompanies()` funcione; si la base existente no la tiene, créala con:
+
+```sql
+alter table public.companies
+  add column if not exists base_currency text not null default 'USD'
+  check (base_currency in ('USD', 'MXN'));
+```
+
+El mismo script agrega la política RLS `demo_update_companies`, limitada al UUID configurado en `frontend-dashboard/.env`. Sin esa política Supabase puede devolver cero filas al actualizar, aunque la política de lectura funcione correctamente.
+
 ## Cobertura del reto Blinka
 
 El flujo implementado termina en la decisión y no mueve dinero real:
