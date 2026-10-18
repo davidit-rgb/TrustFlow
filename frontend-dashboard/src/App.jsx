@@ -10,8 +10,8 @@ import { createAgentDecision, listAgentDecisions, updateAgentDecision } from './
 import { companyId, getSupabaseConfigurationError, isSupabaseConfigured } from './services/supabase'
 import { currentUser, getCurrentUser } from './services/users'
 import { createCompanyVendor, deactivateCompanyVendor, listCompanyVendors } from './services/vendors'
-import { extractInvoiceFromFile } from './services/invoiceWebhook'
-import { parseExtractedInvoice, parseInvoiceText } from './utils/invoiceParser'
+import { extractInvoiceFromFile, extractInvoiceFromText } from './services/invoiceWebhook'
+import { parseExtractedInvoice } from './utils/invoiceParser'
 import { evaluatePayment } from './utils/paymentRules'
 import './styles/dashboard.css'
 
@@ -165,8 +165,8 @@ function App() {
     let processingStage = file ? 'webhook de n8n' : 'análisis local'
     try {
       const invoice = file
-        ? parseExtractedInvoice(await extractInvoiceFromFile(file), vendors)
-        : parseInvoiceText(rawInput, vendors)
+        ? parseExtractedInvoice(await extractInvoiceFromFile(file, file.type.startsWith('image/') ? 'Imagen' : 'PDF'), vendors, file.type.startsWith('image/') ? 'Imagen' : 'PDF')
+        : parseExtractedInvoice(await extractInvoiceFromText(rawInput, channel), vendors, channel)
       const newDecision = evaluatePayment({ invoice, decisions, policy })
       processingStage = 'guardado en Supabase'
       const savedDecision = await createAgentDecision({
