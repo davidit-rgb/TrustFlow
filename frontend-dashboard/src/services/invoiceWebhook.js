@@ -1,5 +1,5 @@
-const invoiceWebhookUrl = 'https://david-rgb.app.n8n.cloud/webhook-test/64502be8-b6d5-41ee-889e-cf4db2c9b91c'
-//const invoiceWebhookUrl = 'https://david-rgb.app.n8n.cloud/webhook/64502be8-b6d5-41ee-889e-cf4db2c9b91c'
+//const invoiceWebhookUrl = 'https://david-rgb.app.n8n.cloud/webhook-test/64502be8-b6d5-41ee-889e-cf4db2c9b91c'
+const invoiceWebhookUrl = 'https://david-rgb.app.n8n.cloud/webhook/64502be8-b6d5-41ee-889e-cf4db2c9b91c'
 
 function unwrapWebhookPayload(rawPayload) {
   let payload = rawPayload
