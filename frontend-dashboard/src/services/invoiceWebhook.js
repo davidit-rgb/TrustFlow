@@ -1,4 +1,4 @@
-const invoiceWebhookUrl = 'https://chapulines-ut.app.n8n.cloud/webhook/64502be8-b6d5-41ee-889e-cf4db2c9b91c'
+const invoiceWebhookUrl = 'https://david-rgb.app.n8n.cloud/webhook-test/64502be8-b6d5-41ee-889e-cf4db2c9b91c'
 
 export async function extractInvoiceFromFile(file) {
   try {
